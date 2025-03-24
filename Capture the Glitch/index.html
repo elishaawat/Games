@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber Glitch Capture</title>
+    <style>
+        body { font-family: 'Courier New', monospace; background-color: #000; color: #00ff00; overflow: hidden; margin: 0; height: 100vh; display: flex; justify-content: center; align-items: center; cursor: none; }
+        .game-container { position: relative; width: 800px; height: 600px; background-color: #111; border: 2px solid #00ff00; overflow: hidden; }
+        .hud { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; align-items: center; color: #00ff00; padding: 5px; }
+        .health-bar { width: 300px; height: 20px; background-color: #222; border: 1px solid #00ff00; position: relative; overflow: hidden; }
+        .health-fill { position: absolute; top: 0; left: 0; height: 100%; width: 100%; background-color: #00ff00; transform-origin: left; transition: transform 0.1s linear; }
+        .health-label { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 0.8em; color: #000; }
+        .score { font-size: 1.2em; }
+        .glitch { position: absolute; width: 20px; height: 20px; background-color: #00ffff; border-radius: 50%; box-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff; transition: transform 0.1s ease-out; pointer-events: auto; cursor: pointer; animation: glitch-animation 0.8s steps(5, start) infinite; }
+        .glitch.jump{ animation: glitch-animation 0.8s steps(5, start) infinite, jump-animation 0.5s ease-in-out 1 alternate; }
+        @keyframes glitch-animation { 0% { transform: translate(0, 0); } 20% { transform: translate(2px, -1px); } 40% { transform: translate(-1px, 2px); } 60% { transform: translate(-0.5px, -2.5px); } 80% { transform: translate(2px, 1px); } 100% { transform: translate(0, 0); } }
+        @keyframes jump-animation { 0% { transform: translateY(0); } 100% { transform: translateY(-5px); } }
+        #start-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); color: #00ff00; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; }
+        #start-screen h1 { font-size: 3em; margin-bottom: 20px; }
+        #start-screen button { background-color: #00ff00; color: #000; border: none; padding: 10px 20px; font-size: 1.2em; cursor: pointer; transition: background-color 0.2s; }
+        #start-screen button:hover { background-color: #00cc00; }
+        #game-over-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); color: #00ff00; display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 10; }
+        #game-over-screen h2 { font-size: 3em; margin-bottom: 20px; }
+        #game-over-screen button { background-color: #00ff00; color: #000; border: none; padding: 10px 20px; font-size: 1.2em; cursor: pointer; transition: background-color 0.2s; }
+        #game-over-screen button:hover { background-color: #00cc00; }
+        #cursor { position: fixed; width: 20px; height: 20px; border-radius: 50%; background-color: #00ff00; pointer-events: none; mix-blend-mode: screen; box-shadow: 0 0 10px #00ff00; transition: transform 0.1s ease; z-index: 100; }
+        #cursor .cursor-area { position: relative; width: 50px; height: 50px; top: 50%; left: 50%; transform: translate(-50%, -50%); border-radius: 50%; border: 2px dashed #00ff00; box-sizing: border-box; pointer-events: none; mix-blend-mode: screen; }
+        @media (max-width: 600px) { .game-container { width: 90%; height: 80vh; } #start-screen h1, #game-over-screen h2 { font-size: 2em; } .score { font-size: 1em; } }
+    </style>
+</head>
+<body>
+    <main class="game-container">
+        <header class="hud">
+            <div class="health-bar">
+                <div class="health-fill"></div>
+                <div class="health-label">System Integrity</div>
+            </div>
+            <div class="score">Score: <span id="score-value">0</span></div>
+        </header>
+        <div id="glitch" class="glitch" tabindex="0" aria-label="Glitch"></div>
+        <div id="start-screen">
+            <h1>Cyber Glitch Capture</h1>
+            <p>Click to capture the Glitches!</p>
+            <button id="start-button" tabindex="0">Initiate System</button>
+        </div>
+        <div id="game-over-screen">
+            <h2>System Compromised!</h2>
+            <p>Final Score: <span id="final-score">0</span></p>
+            <button id="restart-button" tabindex="0">Reboot System</button>
+        </div>
+    </main>
+    <div id="cursor">
+        <div class="cursor-area"></div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const gameContainer = document.querySelector('.game-container'), glitch = document.getElementById('glitch'), scoreValue = document.getElementById('score-value'), startScreen = document.getElementById('start-screen'), gameOverScreen = document.getElementById('game-over-screen'), finalScore = document.getElementById('final-score'), startButton = document.getElementById('start-button'), restartButton = document.getElementById('restart-button'), healthFill = document.querySelector('.health-fill'), cursor = document.getElementById('cursor');
+            let score = 0, health = 100, gameActive = false, glitchSpeed = 1, colorShiftCount = 0, healthTimeoutId;
+            const startGame = () => {
+                gameActive = true; score = 0; health = 100; glitchSpeed = 1; colorShiftCount = 0;
+                scoreValue.textContent = score; healthFill.style.transform = `scaleX(${health / 100})`;
+                resetColors(); startScreen.style.display = 'none'; gameOverScreen.style.display = 'none'; clearTimeout(healthTimeoutId);
+                moveGlitch(); decreaseHealth();
+            }, endGame = () => {
+                gameActive = false; finalScore.textContent = score; gameOverScreen.style.display = 'flex'; clearTimeout(healthTimeoutId);
+            }, moveGlitch = () => {
+                if (!gameActive) return;
+                const maxX = gameContainer.offsetWidth - glitch.offsetWidth, maxY = gameContainer.offsetHeight - glitch.offsetHeight;
+                let randomX = Math.random() * maxX, randomY = Math.random() * maxY;
+                randomX = Math.max(0, Math.min(randomX, maxX)); randomY = Math.max(0, Math.min(randomY, maxY));
+                glitch.style.transform = `translate(${randomX}px, ${randomY}px)`;
+                const delay = Math.max(0.5, 2 / glitchSpeed);
+                setTimeout(() => { glitch.classList.add('jump'); setTimeout(() => { glitch.classList.remove('jump'); }, 500); moveGlitch(); }, delay * 1000);
+                glitchSpeed += 0.05;
+            }, decreaseHealth = () => {
+                if (!gameActive) return;
+                health -= 5; health = Math.max(0, health);
+                healthFill.style.transform = `scaleX(${health / 100})`;
+                if (health <= 0) { endGame(); } else { healthTimeoutId = setTimeout(decreaseHealth, 500); }
+            }, shiftColors = () => {
+                colorShiftCount++;
+                document.body.classList.remove('color-shift-1', 'color-shift-2', 'color-shift-3', 'color-shift-4');
+                switch (colorShiftCount % 4) {
+                    case 1: document.body.classList.add('color-shift-1'); break;
+                    case 2: document.body.classList.add('color-shift-2'); break;
+                    case 3: document.body.classList.add('color-shift-3'); break;
+                    case 0: document.body.classList.add('color-shift-4'); break;
+                }
+            }, resetColors = () => {
+                document.body.classList.remove('color-shift-1', 'color-shift-2', 'color-shift-3', 'color-shift-4');
+                document.body.style.color = '#00ff00';
+            };
+            startButton.addEventListener('click', startGame);
+            restartButton.addEventListener('click', startGame);
+            glitch.addEventListener('click', () => {
+                if (!gameActive) return;
+                score++; scoreValue.textContent = score;
+                if (score % 5 === 0) { shiftColors(); }
+                health = Math.min(100, health + 10); healthFill.style.transform = `scaleX(${health / 100})`;
+                moveGlitch();
+            });
+            document.addEventListener('mousemove', (e) => { cursor.style.left = e.clientX + 'px'; cursor.style.top = e.clientY + 'px'; });
+            gameOverScreen.style.display = 'none';
+        });
+    </script>
+</body>
+</html>
