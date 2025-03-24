@@ -3,17 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Capture the Glitch</title>
+    <title>Cyber Glitch capture</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
         <h1>Capture the Glitch</h1>
     </header>
-    <main>
+
+
+
+
+    <main class="game-container">
         <p>Get ready to play the most exciting game!</p>
+        <header class="hud">
+            <div class="health-bar">
+              <div class="health-fill"></div>
+              <div class="health-label">System Integrity</div>
+            </div>
+            <div class="score">Score: <span id="score-value">0</span></div>
+          </header>
+      
+          <div id="glitch" class="glitch" tabindex="0" aria-label="Glitch"></div>
+      
+          <div id="start-screen">
+            <h1>Cyber Glitch Capture</h1>
+            <p>Click to capture the Glitches!</p>
+            <button id="start-button" tabindex="0">Initiate System</button>
+          </div>
+      
+          <div id="game-over-screen">
+            <h2>System Compromised!</h2>
+            <p>Final Score: <span id="final-score">0</span></p>
+            <button id="restart-button" tabindex="0">Reboot System</button>
+          </div>  
     </main>
+
+    <div id="cursor">
+        <div class="cursor-area"></div>
+      </div>
+
+
+
+
     <footer>
         <p>&copy; Elishaawat. All rights reserved.</p>
     </footer>
+
+
+    <script src="script.js"></script>
 </body>
-</html></html>
+</html>
